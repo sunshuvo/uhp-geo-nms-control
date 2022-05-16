@@ -1,0 +1,65 @@
+import os
+import time
+import sys
+import telnetlib
+
+#telnet Command
+def reboot(host, passw, port):
+    with telnetlib.Telnet(host,port,timeout=10) as tn:
+        tn.read_until(b'Password:', 10)
+        tn.write((passw + '\r\n').encode('ascii'))
+        time.sleep(1)
+        tn.read_until(b'#', 10)
+        tn.write(('reboot' + '\r\n').encode('ascii'))
+        tn.read_until(b'(y/n)?', 10)
+        tn.write(('y' + '\r\n').encode('ascii'))
+        time.sleep(5)
+
+#service Check
+def isActive(daemon):
+    command = "systemctl is-active " + daemon + " > tmp"
+    os.system(command)
+    with open('tmp') as tmp:
+        tmp = tmp.read()
+        if not "inactive" in tmp:
+            os.remove('tmp')
+            return 1
+    return 0
+
+nms = "nms_core"
+nms_stauts = isActive(nms)
+
+#Ping Check
+def check_ping(hostname):
+    response = os.system("ping -c 1 " + hostname)
+    time.sleep(4.0)
+    # and then check the response...
+    if response == 0:
+        pingstatus = 1
+    else:
+        pingstatus = 0
+
+    return pingstatus
+
+ping_ifl_1 = check_ping("10.100.0.26")
+ping_ifl_2 = check_ping("10.100.0.30")
+
+mypass = "uhpnms"
+if ping_ifl_1==1 or ping_ifl_2==1:
+    if nms_stauts == 0:
+	    action = "systemctl start nms_core"
+        os.system('echo %s|sudo -S %s' % (mypass, action))
+else:
+    if nms_stauts == 1:
+        action = "systemctl stop nms_core"
+        os.system('echo %s|sudo -S %s' % (mypass, action))
+        reboot("192.168.168.30", "uhpnms", "23")
+        reboot("192.168.168.31", "uhpnms", "23")
+        reboot("192.168.168.32", "uhpnms", "23")
+        reboot("192.168.168.33", "uhpnms", "23")
+        reboot("192.168.168.34", "uhpnms", "23")
+        reboot("192.168.168.35", "uhpnms", "23")
+        reboot("192.168.168.36", "uhpnms", "23")
+        reboot("192.168.168.37", "uhpnms", "23")
+        reboot("192.168.168.38", "uhpnms", "23")
+        reboot("192.168.168.39", "uhpnms", "23")
